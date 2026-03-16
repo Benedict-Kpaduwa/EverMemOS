@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  html, body, #root {
+    height: 100%;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #09090b; /* Zinc-950 */
+    color: #e4e4e7; /* Zinc-200 */
+    overflow: hidden;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(167, 85%, 26%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(239, 84%, 67%, 0.08) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  /* Refined Typography */
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background: rgba(24, 24, 27, 0.6); /* Zinc-900 / 60% */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .glass-card {
+    background: linear-gradient(145deg, rgba(39, 39, 42, 0.4), rgba(24, 24, 27, 0.2));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #52525b; }
+}
