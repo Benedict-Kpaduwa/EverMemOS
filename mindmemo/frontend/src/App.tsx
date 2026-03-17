@@ -10,6 +10,7 @@ interface MemoryData {
   mood_history: { score: number; timestamp: string; label?: string }[];
   session_count: number;
   last_session: string;
+  profile_summary: string;
 }
 
 export default function App() {
@@ -21,7 +22,7 @@ export default function App() {
 
   const fetchMemory = useCallback(async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/memory/${USER_ID}`);
+      const res = await fetch(`${BACKEND_URL}/insights/${USER_ID}`);
       if (res.ok) setMemoryData(await res.json());
     } catch {
       /* silent */

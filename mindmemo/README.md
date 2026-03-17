@@ -1,177 +1,174 @@
 # MindMemo 🧠
 
-> **AI-powered mental health companion with persistent memory — built on EverMemOS**
+> **AI-Powered Mental Health Companion with Continuous Persistent Memory**  
+> Built on [EverMemOS](https://github.com/evermemos) — the enterprise-grade long-term memory system for AI.
+
+[![EverMemOS](https://img.shields.io/badge/Powered%20by-EverMemOS-10b981?style=flat-square)](https://github.com/evermemos)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61dafb?style=flat-square)](https://react.dev/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 
 ---
 
-## 🏆 Competition Track
+## 🎯 What Problem Does This Solve?
 
-**EverMind Memory Genesis Competition 2026 · Track 1: Agent + Memory**
+Every mental health chatbot today suffers from the same flaw: **amnesia**. Each conversation starts from zero. There is no continuity, no relationship, no compounding understanding of the user.
 
----
-
-## The Problem
-
-### The Therapist Gap
-There are fewer than 1 licensed therapist per 500 people in most countries. Waitlists stretch months. People in daily distress have nowhere to turn for low-stakes emotional support.
-
-### AI's Memory Amnesia Problem
-Current AI companions reset between sessions — they can't remember what you shared last week, what your triggers are, or what coping strategies worked for you. Every conversation starts from zero, making it feel hollow and transactional.
+MindMemo is different. It uses **EverMemOS** to build a genuine, persistent model of who you are across every session — your triggers, your mood patterns, your recurring themes. Like a real therapist who remembers you.
 
 ---
 
-## The Solution
+## ✨ Key Features
 
-MindMemo is a CBT-based mental health companion that **remembers you**. Powered by EverMemOS, it maintains a persistent, structured memory of your emotional patterns, session history, and identified triggers — across every conversation.
-
-When you return, it knows who you are.
-
----
-
-## How EverMemOS Memory Is Used
-
-MindMemo makes four types of EverMemOS API calls:
-
-| Operation | Endpoint | Purpose |
-|-----------|----------|---------|
-| **Store message** | `POST /api/v1/memories` | Every user message is stored as an episodic memory |
-| **Store response** | `POST /api/v1/memories` | AI responses are also stored to build conversational context |
-| **Retrieve context** | `GET /api/v1/memories/search?query=...` | Semantic search retrieves relevant past memories before each AI call |
-| **Session summary** | `POST /api/v1/memories` (tagged `session_summary: true`) | End-of-session summaries are stored with metadata tags |
-
-The retrieved memories are injected into the system prompt, enabling the AI to say *"Last time you mentioned feeling overwhelmed at work…"* naturally.
+| Feature | Description |
+|---|---|
+| 🧠 **Persistent Memory** | Every conversation is stored and indexed in EverMemOS — mood, triggers, insights |
+| 🔍 **Hybrid Search** | Retrieves relevant past memories using both BM25 keyword + vector semantic search |
+| 💬 **"I Remember You Said…"** | UI explicitly cites which memories were used to generate each response |
+| 📊 **Live Memory Panel** | Real-time sidebar shows mood arc, recurring themes, session count, AI profile summary |
+| 🌿 **CBT-Grounded AI** | System prompt guides responses with Cognitive Behavioral Therapy best practices |
+| 🔒 **Local Data Enclave** | All memories stored in your self-hosted EverMemOS instance — nothing leaves your stack |
 
 ---
 
-## Privacy-First Design
-
-MindMemo stores **structured memory objects**, not raw conversation logs:
-
-- Each memory is a short, semantically complete string (e.g., `"User said: feeling anxious about an upcoming presentation"`)
-- Session summaries are metadata-tagged (`session_summary: true`) rather than dumping full transcripts
-- No personally identifiable information is required — only a `user_id` string
-- Memory retrieval is query-scoped and limited (5 results max), not a full data dump
-- All data stays local — EverMemOS runs on `localhost:1995`
-
----
-
-## Architecture
+## 🏗 Architecture
 
 ```
-Browser (React + Vite)
-        │
-        ▼
-MindMemo Backend (FastAPI :8000)
-        │
-   ┌────┴────┐
-   ▼         ▼
-EverMemOS   OpenAI API
-(:1995)     (GPT-4o-mini)
+┌───────────────────────────────────────────┐
+│              React Frontend               │
+│  ChatWindow │ MemoryPanel │ ChatBubble    │
+│         (Vite + Tailwind CSS)             │
+└────────────────────┬──────────────────────┘
+                     │  HTTP
+┌────────────────────▼──────────────────────┐
+│           MindMemo FastAPI Backend        │
+│  /chat  │  /insights/{user_id}  │ /health │
+│   • Hybrid memory search                  │
+│   • OpenRouter (GPT-4o-mini)              │
+│   • Mood heuristic scoring                │
+└────────────────────┬──────────────────────┘
+                     │  HTTP
+┌────────────────────▼──────────────────────┐
+│             EverMemOS (Port 1995)         │
+│   POST /api/v1/memories  (store)          │
+│   GET  /api/v1/memories  (fetch)          │
+│   GET  /api/v1/memories/search (hybrid)   │
+│                                           │
+│   MongoDB │ Milvus │ Elasticsearch │ Redis │
+└───────────────────────────────────────────┘
 ```
 
 ---
 
-## Setup
+## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.12+, Node.js 18+
-- EverMemOS running locally (see root repo README)
-- OpenAI API key
+
+- Python 3.12+ with `uv`
+- Node.js 18+ with `pnpm`
+- Running [EverMemOS](../../README.md) instance (port 1995)
+- OpenRouter API key (or OpenAI)
 
 ### 1. Start EverMemOS
 
 ```bash
-# From the repo root
-docker compose up -d
+# From repo root
+cp env.template .env   # Fill in OPENAI_API_KEY, MONGODB_URI, etc.
+docker-compose up -d   # MongoDB, Milvus, Elasticsearch, Redis
 uv run python src/run.py
 ```
 
-EverMemOS will be available at `http://localhost:1995`.
-
-### 2. Start the MindMemo Backend
+### 2. Start MindMemo Backend
 
 ```bash
 cd mindmemo/backend
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
-
-# Run the server
-uvicorn main:app --reload --port 8000
+cp .env.example .env   # Add OPENAI_API_KEY and OPENROUTER_BASE_URL
+uv run uvicorn main:app --reload --port 8000
 ```
 
-Backend will be available at `http://localhost:8000`.
-
-### 3. Start the MindMemo Frontend
+### 3. Start MindMemo Frontend
 
 ```bash
 cd mindmemo/frontend
-
-# Install dependencies
-npm install
-
-# Run the dev server
-npm run dev
-```
-
-Frontend will be available at `http://localhost:5173`.
-
----
-
-## API Reference (Backend)
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/chat` | Send a message, get an AI response (stores + retrieves EverMemOS memory) |
-| `GET`  | `/memory/{user_id}` | Get structured memory profile for a user |
-| `POST` | `/session/end` | Write a session summary to EverMemOS |
-| `GET`  | `/health` | Health check |
-
----
-
-## UI Overview
-
-```
-┌─────────────────┬──────────────────────────────────────┐
-│  Your Memory    │  MindMemo                            │
-│                 │                                      │
-│  😊 Good (8/10) │  🧠 Hi there! I'm MindMemo…         │
-│                 │                                      │
-│  Sessions: 3   │  [chat history]                      │
-│  Last: today   │                                      │
-│                 │                                      │
-│  Triggers:      │                                      │
-│  • work         │  ┌──────────────────────────────┐   │
-│  • sleep        │  │ Share what's on your mind…  │   │
-│  • anxious      │  └──────────────────────────────┘   │
-└─────────────────┴──────────────────────────────────────┘
+pnpm install
+pnpm dev
+# Open http://localhost:5173
 ```
 
 ---
 
-## CBT Techniques Used
+## 🔌 How EverMemOS Integration Works
 
-The AI companion draws from:
-- **Cognitive Restructuring** — challenging negative thought patterns
-- **Behavioral Activation** — scheduling positive activities
-- **Grounding Techniques** — 5-4-3-2-1 sensory anchoring
-- **Thought Journaling** — externalizing and examining thoughts
-- **Sleep Hygiene Prompts** — when sleep-related triggers are detected
+### Storing a Message
+Every user message and AI response is sent to EverMemOS:
+```json
+POST /api/v1/memories
+{
+  "message_id": "uuid",
+  "sender": "user_001",
+  "content": "I've been feeling overwhelmed at work",
+  "role": "user",
+  "create_time": "2026-03-16T..."
+}
+```
+EverMemOS automatically extracts **episodic memories** and **user profile** from accumulated messages.
 
-Technique suggestions are personalized based on retrieved memories.
+### Hybrid Memory Retrieval
+Before every AI response, we search for relevant past memories:
+```
+GET /api/v1/memories/search?user_id=user_001&query=<message>&retrieve_method=hybrid&top_k=6
+```
+- **Keyword (BM25)**: Finds exact topic matches ("work stress mentioned 3 sessions ago")
+- **Vector (Milvus)**: Finds semantically similar memories ("feeling overwhelmed" → past anxiety discussions)
+- Falls back to keyword-only if vector store is unavailable
+
+### Profile & Insights
+```
+GET /api/v1/memories?user_id=user_001&memory_type=profile
+GET /api/v1/memories?user_id=user_001&memory_type=episodic_memory
+```
+These are merged to build the live **Memory Panel** sidebar.
 
 ---
 
-## Disclaimer
+## 📁 Project Structure
 
-MindMemo is not a medical device or licensed therapy service. It is an AI companion for emotional support and psychoeducation. For crises or clinical concerns, please contact a licensed mental health professional or crisis line.
+```
+mindmemo/
+├── backend/
+│   ├── main.py          # FastAPI app — chat, insights, session endpoints
+│   ├── requirements.txt
+│   └── .env.example
+└── frontend/
+    ├── src/
+    │   ├── App.tsx              # Root layout, memory data fetching
+    │   ├── components/
+    │   │   ├── ChatWindow.tsx   # Chat UI + memory recall cards
+    │   │   ├── ChatBubble.tsx   # Message bubbles
+    │   │   └── MemoryPanel.tsx  # Live memory sidebar
+    │   └── index.css            # Tailwind + custom glassmorphism tokens
+    ├── tailwind.config.js
+    └── vite.config.js
+```
 
 ---
 
-## License
+## 🧠 Why EverMemOS?
 
-Apache 2.0 — Same as EverMemOS.
+Most memory solutions for AI are either:
+- **In-context**: Limited by token windows, lost after session
+- **Simple key-value stores**: No semantic search, no structure
+
+EverMemOS provides:
+- **Automated memory extraction**: Episodic, profile, foresight, event logs
+- **Hybrid retrieval**: BM25 + vector simultaneously
+- **Structured memory types**: Distinguishes *what happened* from *who the user is*
+- **Enterprise-grade persistence**: MongoDB + Milvus + Elasticsearch
+
+This is not a toy integration — MindMemo uses EverMemOS the way it was designed: as the actual long-term brain of the AI.
+
+---
+
+## 📄 License
+
+Apache 2.0 — see [LICENSE](../../LICENSE)
