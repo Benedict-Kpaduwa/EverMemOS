@@ -28,9 +28,59 @@ export default function ChatWindow({ onMessageSent }: ChatWindowProps) {
   const [sending, setSending] = useState(false);
   const [savingMemory, setSavingMemory] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
+  
+  // Voice Input (STT) State
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Initialize Speech Recognition
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = true;
+        recognitionRef.current.lang = "en-US";
+
+        recognitionRef.current.onresult = (event: any) => {
+          let currentTranscript = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+             currentTranscript += event.results[i][0].transcript;
+          }
+          setInput((prev) => prev ? prev + " " + currentTranscript.trim() : currentTranscript.trim());
+          autoResize();
+        };
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.error("Speech recognition error", event.error);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+      }
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      if (recognitionRef.current) {
+        setInput(""); // Optional: clear input before starting to listen
+        recognitionRef.current.start();
+        setIsListening(true);
+      } else {
+        alert("Your browser does not support Speech Recognition.");
+      }
+    }
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -238,10 +288,32 @@ export default function ChatWindow({ onMessageSent }: ChatWindowProps) {
                 className="flex-1 bg-transparent border-0 pl-3 pr-2 py-2.5 sm:py-3 text-[15px] sm:text-base text-zinc-100 placeholder-zinc-500 resize-none focus:outline-none focus:ring-0 leading-snug sm:leading-relaxed scrollbar-hide"
                 style={{ minHeight: "44px", maxHeight: "150px", overflowY: "auto" }}
               />
-              <div className="flex items-center gap-2 sm:gap-3 pr-1 sm:pr-2 pb-1 flex-shrink-0">
+              <div className="flex items-center gap-2 pr-1 sm:pr-2 pb-1 flex-shrink-0">
                 <span className={`text-[10px] sm:text-[11px] font-semibold transition-colors hidden xs:block ${charCount > 400 ? 'text-amber-500' : 'text-zinc-600'}`}>
                   {charCount > 0 ? charCount : ''}
                 </span>
+                
+                {/* Voice Input Button */}
+                <button
+                  onClick={toggleListening}
+                  disabled={sending}
+                  title={isListening ? "Stop listening" : "Start Voice Input"}
+                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full sm:rounded-2xl flex items-center justify-center transition-all duration-300 flex-shrink-0 ${isListening ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white'} ${sending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isListening ? (
+                    <span className="w-2.5 h-2.5 rounded-sm bg-red-500 animate-pulse" />
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 sm:w-4.5 sm:h-4.5">
+                      <line x1="12" y1="1" x2="12" y2="15"></line>
+                      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                      <line x1="12" y1="19" x2="12" y2="23"></line>
+                      <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                  )}
+                </button>
+
+                {/* Send Button */}
                 <button
                   onClick={() => sendMessage()}
                   disabled={!input.trim() || sending}

@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 interface ChatBubbleProps {
   role: "user" | "assistant";
   content: string;
@@ -5,6 +7,38 @@ interface ChatBubbleProps {
 
 export default function ChatBubble({ role, content }: ChatBubbleProps) {
   const isUser = role === "user";
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Stop speaking when component unmounts
+  useEffect(() => {
+    return () => {
+      if (isSpeaking) {
+        window.speechSynthesis?.cancel();
+      }
+    };
+  }, [isSpeaking]);
+
+  const toggleSpeech = () => {
+    if (!window.speechSynthesis) {
+      alert("Your browser does not support Text-to-Speech.");
+      return;
+    }
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    } else {
+      // Cancel any ongoing speech first
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(content);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      
+      window.speechSynthesis.speak(utterance);
+      setIsSpeaking(true);
+    }
+  };
 
   return (
     <div className={`flex w-full animate-slide-up ${isUser ? "justify-end" : "justify-start"} mb-4 sm:mb-6 px-1 sm:px-0`}>
@@ -39,6 +73,32 @@ export default function ChatBubble({ role, content }: ChatBubbleProps) {
                  style={{ boxShadow: "inset 0 1px 1px rgba(255,255,255,0.05)" }} />
           ) : (
              <div className="absolute inset-0 rounded-2xl sm:rounded-[20px] rounded-tl-[4px] sm:rounded-tl-sm pointer-events-none rounded-inherit mix-blend-overlay opacity-30 bg-gradient-to-b from-white to-transparent opacity-[0.02]" />
+          )}
+
+          {/* Speaker Button for AI */}
+          {!isUser && (
+            <button
+              onClick={toggleSpeech}
+              title={isSpeaking ? "Stop speaking" : "Read aloud"}
+              className={`absolute -right-10 top-1 p-2 rounded-full transition-colors ${
+                isSpeaking 
+                  ? 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20' 
+                  : 'text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/10'
+              }`}
+            >
+              {isSpeaking ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="6" y="4" width="4" height="16"></rect>
+                  <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                </svg>
+              )}
+            </button>
           )}
         </div>
       </div>
